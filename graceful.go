@@ -33,10 +33,10 @@ func New(ctx context.Context) (*Graceful, context.Context) {
 }
 
 func (g *Graceful) signals() {
+	defer g.cancel(ErrSignalExit)
 	exit := make(chan os.Signal, 1)
 	signal.Notify(exit, syscall.SIGINT, syscall.SIGTERM)
 	<-exit
-	g.cancel(ErrSignalExit)
 }
 
 func (g *Graceful) shutdown() error {
@@ -69,8 +69,8 @@ func (g *Graceful) Go(fn TaskFunc) {
 	}()
 }
 
-// Cleanup adds a function that will be executed when group is shutting down.
-func (g *Graceful) Cleanup(fn TaskFunc) {
+// Stop adds a function that will be executed when group stops.
+func (g *Graceful) Stop(fn TaskFunc) {
 	g.cleanup = append(g.cleanup, fn)
 }
 
