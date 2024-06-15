@@ -68,7 +68,9 @@ func (g *Graceful) Go(fn TaskFunc) {
 	go func() {
 		defer g.wg.Done()
 		err := fn(g.ctx)
-		g.cancel(err)
+		if err != nil {
+			g.cancel(err)
+		}
 	}()
 }
 
