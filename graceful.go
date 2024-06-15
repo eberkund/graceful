@@ -7,11 +7,12 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 )
 
 var ErrSignalExit = errors.New("exit signal received")
 
-type TaskFunc func() error
+type TaskFunc func(ctx context.Context) error
 
 // Graceful implements graceful cleanup for multiple subtasks.
 type Graceful struct {
@@ -22,14 +23,14 @@ type Graceful struct {
 }
 
 // New returns an instance of Graceful.
-func New(ctx context.Context) (*Graceful, context.Context) {
+func New(ctx context.Context) *Graceful {
 	ctx, cancel := context.WithCancelCause(ctx)
 	g := &Graceful{
 		ctx:    ctx,
 		cancel: cancel,
 	}
 	go g.signals()
-	return g, ctx
+	return g
 }
 
 func (g *Graceful) signals() {
@@ -45,11 +46,13 @@ func (g *Graceful) shutdown() error {
 		lock sync.Mutex
 		errs []error
 	)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	wg.Add(len(g.cleanup))
 	for _, fn := range g.cleanup {
 		go func(fn TaskFunc) {
 			defer wg.Done()
-			err := fn()
+			err := fn(ctx)
 			lock.Lock()
 			errs = append(errs, err)
 			lock.Unlock()
@@ -64,7 +67,7 @@ func (g *Graceful) Go(fn TaskFunc) {
 	g.wg.Add(1)
 	go func() {
 		defer g.wg.Done()
-		err := fn()
+		err := fn(g.ctx)
 		g.cancel(err)
 	}()
 }
