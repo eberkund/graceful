@@ -3,26 +3,26 @@
 Graceful makes it easy to handle graceful shutdown in your Go applications.
 
 - Automatically handle OS exit signals
-- Blocking function to syncronize multiple goroutines
+- Blocking function to synchronize multiple goroutines
 - Designed to work equally well with contextual and non-contextual goroutines
 - The cancellation reason is provided upon exit
 - No additional dependencies
 
 ```go
-grace, ctx := graceful.New(context.Background())
+g := graceful.New(context.Background())
 
 // Add goroutine using context
-grace.Go(func() error {
+g.Go(func(ctx context.Context) error {
     return queue.Start(ctx)
 })
 
 // Add goroutine without using context
-grace.Go(func() error {
+g.Go(func(ctx context.Context) error {
     return server.ListenAndServe()
 })
 
-// Hook to cleanup contextless goroutines
-grace.Stop(func() error {
+// Hook to clean up contextless goroutines
+g.Stop(func(ctx context.Context) error {
     return server.Shutdown(context.Background())
 })
 
