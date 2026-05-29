@@ -9,6 +9,11 @@ Graceful makes it easy to handle graceful shutdown in your Go applications.
 - No additional dependencies
 
 ```go
+import (
+    "context"
+    "github.com/eberkund/graceful"
+)
+
 g := graceful.New(context.Background())
 
 // Add goroutine using context
@@ -17,7 +22,7 @@ g.Go(func(ctx context.Context) error {
 })
 
 // Add goroutine without using context
-g.Go(func(ctx context.Context) error {
+g.Go(func(_ context.Context) error {
     return server.ListenAndServe()
 })
 
@@ -28,6 +33,6 @@ g.Stop(func(ctx context.Context) error {
 
 // Log the reason for stopping
 log.Error().
-    AnErr("cause", grace.Wait()).
+    AnErr("cause", g.Wait()).
     Msg("service shutdown")
 ```
